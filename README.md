@@ -98,6 +98,4 @@ I designed and built the Smart Study Planner end-to-end, including idea, AI logi
 
 ---
 
-## 🏁 Hackathon Submission
 
-This project was built as part of the **AI Partner Catalyst: Accelerate Innovation** hackathon, leveraging Google Cloud’s AI capabilities to solve a real-world problem in education.
