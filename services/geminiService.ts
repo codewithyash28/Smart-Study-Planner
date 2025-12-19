@@ -1,10 +1,10 @@
 
 import { GoogleGenAI } from "@google/genai";
 
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 export const getStudyTips = async (subjects: string[]) => {
   try {
-    // Initializing Gemini client as per SDK guidelines: const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `I am a student studying the following subjects: ${subjects.join(', ')}. 
@@ -18,5 +18,21 @@ export const getStudyTips = async (subjects: string[]) => {
   } catch (error) {
     console.error("Error fetching study tips:", error);
     return "Stay focused, take small breaks, and remember to stay hydrated!";
+  }
+};
+
+export const askAiTutor = async (question: string, subjects: string[]) => {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `The student is currently studying: ${subjects.join(', ')}. They have a doubt: "${question}"`,
+      config: {
+        systemInstruction: "You are a helpful, patient, and expert school tutor. Explain concepts clearly and simply so a student can easily understand. If the question is not related to studies, gently remind them to focus on their subjects.",
+      },
+    });
+    return response.text;
+  } catch (error) {
+    console.error("AI Tutor Error:", error);
+    return "Sorry, I'm having a bit of trouble connecting. Try again in a second!";
   }
 };

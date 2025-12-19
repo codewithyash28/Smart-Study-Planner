@@ -11,26 +11,28 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ subjects, schedule, aiTips, loadingTips, onRefreshTips }) => {
-  const totalStudyMinutes = schedule
-    .filter(item => item.type === 'STUDY')
-    .reduce((acc, item) => acc + item.duration, 0);
-
-  const studySessionsCount = schedule.filter(item => item.type === 'STUDY').length;
+  const studySessions = schedule.filter(item => item.type === 'STUDY');
+  const completedSessionsCount = studySessions.filter(s => s.completed).length;
+  const totalStudyMinutes = studySessions.reduce((acc, item) => acc + item.duration, 0);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-indigo-600 p-5 rounded-3xl text-white shadow-xl shadow-indigo-100 transition-transform hover:scale-[1.02]">
           <p className="text-[10px] font-black opacity-70 uppercase tracking-wider mb-1">Study Sessions</p>
-          <p className="text-3xl font-black">{studySessionsCount}</p>
-          <div className="mt-2 text-xs font-bold bg-white/20 py-1 px-2 rounded-lg inline-block">{totalStudyMinutes} mins total</div>
+          <p className="text-3xl font-black">
+            {completedSessionsCount}<span className="text-lg opacity-60">/{studySessions.length}</span>
+          </p>
+          <div className="mt-2 text-xs font-bold bg-white/20 py-1 px-2 rounded-lg inline-block">
+            {completedSessionsCount === studySessions.length && studySessions.length > 0 ? 'All Done! 🔥' : `${totalStudyMinutes} mins total`}
+          </div>
         </div>
         <div className="bg-white p-5 rounded-3xl text-slate-900 border-2 border-slate-100 shadow-sm transition-transform hover:scale-[1.02]">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Break Time</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Progress</p>
           <p className="text-3xl font-black text-emerald-600">
-            {schedule.filter(i => i.type === 'BREAK').reduce((acc, i) => acc + i.duration, 0)}<span className="text-lg">m</span>
+            {studySessions.length > 0 ? Math.round((completedSessionsCount / studySessions.length) * 100) : 0}<span className="text-lg">%</span>
           </p>
-          <div className="mt-2 text-xs font-bold text-slate-500">Rest is progress!</div>
+          <div className="mt-2 text-xs font-bold text-slate-500">Keep ticking them off!</div>
         </div>
       </div>
 

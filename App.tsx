@@ -5,6 +5,7 @@ import SubjectInput from './components/SubjectInput';
 import TimeConfig from './components/TimeConfig';
 import Timetable from './components/Timetable';
 import Dashboard from './components/Dashboard';
+import AIBot from './components/AIBot';
 import { getStudyTips } from './services/geminiService';
 
 const App: React.FC = () => {
@@ -20,7 +21,6 @@ const App: React.FC = () => {
   const [loadingTips, setLoadingTips] = useState(false);
 
   const generateSchedule = useCallback(() => {
-    // Check if we have subjects and valid durations
     if (subjects.length === 0) {
       alert("Please add at least one subject first!");
       return;
@@ -46,24 +46,17 @@ const App: React.FC = () => {
 
     const newSchedule: ScheduleItem[] = [];
     let currentTime = new Date(start);
-    
-    // Sort subjects by priority
     const sortedSubjects = [...subjects].sort((a, b) => priorityWeight[b.priority] - priorityWeight[a.priority]);
     let subjectIndex = 0;
 
-    // Limit iterations to prevent accidental infinite loops
     let safetyCounter = 0;
     while (currentTime < end && safetyCounter < 50) {
       safetyCounter++;
       const currentSubject = sortedSubjects[subjectIndex % sortedSubjects.length];
-      
-      // Study Session
       const sessionEnd = new Date(currentTime.getTime() + config.sessionDuration * 60000);
       
-      // Don't add if it goes past the end time
       if (sessionEnd > end) break;
 
-      // Fix: Use 'numeric' for hour and '2-digit' for minute as '2-numeric' is not a valid type
       newSchedule.push({
         id: Math.random().toString(36).substr(2, 9),
         title: `Study: ${currentSubject.name}`,
@@ -71,29 +64,27 @@ const App: React.FC = () => {
         endTime: sessionEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
         duration: config.sessionDuration,
         type: 'STUDY',
-        subjectId: currentSubject.id
+        subjectId: currentSubject.id,
+        completed: false
       });
 
       currentTime = new Date(sessionEnd);
 
-      // Break Session
       const breakEnd = new Date(currentTime.getTime() + config.breakDuration * 60000);
       if (breakEnd > end || config.breakDuration <= 0) {
-        // If no more room for a break or break is 0, we finish or just move to next subject
         if (breakEnd > end) break;
       } else {
-        // Fix: Use 'numeric' for hour and '2-digit' for minute as '2-numeric' is not a valid type
         newSchedule.push({
           id: Math.random().toString(36).substr(2, 9),
           title: 'Rest & Recharge 🥤',
           startTime: currentTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
           endTime: breakEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
           duration: config.breakDuration,
-          type: 'BREAK'
+          type: 'BREAK',
+          completed: false
         });
         currentTime = new Date(breakEnd);
       }
-
       subjectIndex++;
     }
 
@@ -110,6 +101,12 @@ const App: React.FC = () => {
 
   const handleUpdateScheduleItem = (updatedItem: ScheduleItem) => {
     setSchedule(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+  };
+
+  const handleToggleComplete = (id: string) => {
+    setSchedule(prev => prev.map(item => 
+      item.id === id ? { ...item, completed: !item.completed } : item
+    ));
   };
 
   return (
@@ -137,19 +134,13 @@ const App: React.FC = () => {
       <main className="max-w-5xl mx-auto px-4 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-5 space-y-6">
           <Dashboard subjects={subjects} schedule={schedule} aiTips={aiTips} loadingTips={loadingTips} onRefreshTips={fetchAiTips} />
-          
           <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <h2 className="text-xl font-extrabold text-slate-900 mb-5 flex items-center gap-3">
               <span className="w-2 h-8 bg-indigo-500 rounded-full"></span>
               Subjects
             </h2>
-            <SubjectInput 
-              subjects={subjects} 
-              onAdd={(s) => setSubjects(prev => [...prev, s])}
-              onRemove={(id) => setSubjects(prev => prev.filter(s => s.id !== id))}
-            />
+            <SubjectInput subjects={subjects} onAdd={(s) => setSubjects(prev => [...prev, s])} onRemove={(id) => setSubjects(prev => prev.filter(s => s.id !== id))} />
           </section>
-
           <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <h2 className="text-xl font-extrabold text-slate-900 mb-5 flex items-center gap-3">
               <span className="w-2 h-8 bg-indigo-500 rounded-full"></span>
@@ -166,21 +157,22 @@ const App: React.FC = () => {
               Today's Schedule
             </h2>
             {schedule.length > 0 ? (
-              <Timetable items={schedule} onUpdateItem={handleUpdateScheduleItem} />
+              <Timetable items={schedule} onUpdateItem={handleUpdateScheduleItem} onToggleComplete={handleToggleComplete} />
             ) : (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="bg-indigo-50 p-8 rounded-full mb-6">
-                  <svg className="w-16 h-16 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <svg className="w-16 h-16 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 mb-2">Ready to start?</h3>
-                <p className="text-slate-500 max-w-xs mx-auto">Add your subjects on the left and hit the "Generate" button above to create your custom timetable.</p>
+                <p className="text-slate-500 max-w-xs mx-auto">Add your subjects on the left and hit the "Generate" button above.</p>
               </div>
             )}
           </div>
         </div>
       </main>
+
+      {/* Floating AI Bot */}
+      <AIBot subjects={subjects} />
     </div>
   );
 };

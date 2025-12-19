@@ -21,6 +21,7 @@ export interface ScheduleItem {
   duration: number;  // in minutes
   type: ScheduleItemType;
   subjectId?: string;
+  completed?: boolean;
 }
 
 export interface StudyPlanConfig {
