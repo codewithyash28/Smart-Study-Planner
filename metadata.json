@@ -1,0 +1,5 @@
+{
+  "name": "Smart Study Planner",
+  "description": "A student-focused study planner that automatically generates daily timetables with AI-powered study tips and breaks.",
+  "requestFramePermissions": []
+}
